@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-
 
 public class ClassSchedule {
     
@@ -33,19 +33,92 @@ public class ClassSchedule {
     private final String SCHEDULE_COL_HEADER = "schedule";
     private final String INSTRUCTOR_COL_HEADER = "instructor";
     private final String SUBJECTID_COL_HEADER = "subjectid";
+    private final String SCHEDULETYPE_ID = "scheduletype";
+    private final String COURSE_ID = "course";
     
-    public String convertCsvToJsonString(List<String[]> csv) {
-        return "";
+    public String convertCsvToJsonString(List<String[]> csv){
+        
+        JsonObject csvToJson = new JsonObject();        /* Create overall JsonObject */
+        JsonObject scheduletype = new JsonObject();     /* Create JsonObject to hold scheduletype data */
+        JsonObject course = new JsonObject();       /* Create JsonObject to hold course data */
+        JsonObject subject = new JsonObject();      /* Create JsonObject to hold subject data */
+        ArrayList<JsonObject> section = new ArrayList();        /* Create JsonObject to hold section data */
+        
+        String[] sectionObject;     /* create array to hold data from iterator */
+        
+        Iterator<String[]> iterator = csv.iterator();       /* Create iterator to read csv */
+        
+        sectionObject = iterator.next();        /* Set array equal to first line of the csv */
+        
+        HashMap<String, Integer> headerRow = new HashMap();     /* Create a HashMap for the header row */
+        
+        for(int i = 0; i < sectionObject.length; i++){
+            headerRow.put(sectionObject[i], i);     /* Enumerate the headers to be used as constants */
+        }
+        
+        while(iterator.hasNext()){
+                JsonObject sectionData = new JsonObject();      /* Create JsonObject to build a section */
+                sectionObject = iterator.next();        /* Set array equal to iterator */
+                
+                String[] courseNumAndCode = sectionObject[headerRow.get(NUM_COL_HEADER)].split(" ");     /* Split string and place data into the array */
+                String courseInstructor = sectionObject[headerRow.get(INSTRUCTOR_COL_HEADER)];      /* Place string to be formatted as an array into variable */
+                
+                sectionData.put(CRN_COL_HEADER, new BigDecimal(sectionObject[headerRow.get(CRN_COL_HEADER)]));      /* Add data to sectionData */
+                sectionData.put(SUBJECTID_COL_HEADER, courseNumAndCode[0]);     /*"*/
+                sectionData.put(NUM_COL_HEADER, courseNumAndCode[1]);       /*"*/
+                sectionData.put(SECTION_COL_HEADER, sectionObject[headerRow.get(SECTION_COL_HEADER)]);      /*"*/
+                sectionData.put(TYPE_COL_HEADER, sectionObject[headerRow.get(TYPE_COL_HEADER)]);        /*"*/
+                sectionData.put(START_COL_HEADER, sectionObject[headerRow.get(START_COL_HEADER)]);      /*"*/
+                sectionData.put(END_COL_HEADER, sectionObject[headerRow.get(END_COL_HEADER)]);      /*"*/
+                sectionData.put(DAYS_COL_HEADER, sectionObject[headerRow.get(DAYS_COL_HEADER)]);        /*"*/
+                sectionData.put(WHERE_COL_HEADER, sectionObject[headerRow.get(WHERE_COL_HEADER)]);      /*"*/
+                sectionData.put(INSTRUCTOR_COL_HEADER, courseInstructor.split(", "));       /*"*/
+                
+                section.add(sectionData);       /* Add sectionData to section array */
+                
+                
+                JsonObject courseData = new JsonObject();       /* Create object to hold courseData */
+                
+                courseData.put(SUBJECTID_COL_HEADER, courseNumAndCode[0]);      /* Add data to courseData */
+                courseData.put(NUM_COL_HEADER, courseNumAndCode[1]);        /*"*/
+                courseData.put(DESCRIPTION_COL_HEADER, sectionObject[headerRow.get(DESCRIPTION_COL_HEADER)]);       /*"*/
+                courseData.put(CREDITS_COL_HEADER, new BigDecimal(sectionObject[headerRow.get(CREDITS_COL_HEADER)]));       /*"*/
+                
+                course.put(sectionObject[headerRow.get(NUM_COL_HEADER)], courseData);       /* Place courseData into course object */
+                
+                
+                if(!subject.containsValue(sectionObject[headerRow.get(SUBJECT_COL_HEADER)])){       /* Check to see if value is already present in subject object */
+                    subject.put(courseNumAndCode[0], sectionObject[headerRow.get(SUBJECT_COL_HEADER)]);     /* Place value into subject object */
+                }
+                else{}
+                
+                
+                if(!scheduletype.containsValue(sectionObject[headerRow.get(SCHEDULE_COL_HEADER)])){     /* Check to see if value is already present in scheduletype object */
+                    scheduletype.put(sectionObject[headerRow.get(TYPE_COL_HEADER)], sectionObject[headerRow.get(SCHEDULE_COL_HEADER)]);     /* Place value into scheduletype object */
+                }
+                else{}
+                
+        }
+        
+        csvToJson.put(SUBJECT_COL_HEADER, subject);     /* Place data into final JsonObject */
+        csvToJson.put(SECTION_COL_HEADER, section);     /*"*/
+        csvToJson.put(COURSE_ID, course);       /*"*/
+        csvToJson.put(SCHEDULETYPE_ID, scheduletype);       /*"*/
+        
+        String jsonString = Jsoner.serialize(csvToJson);        /* Serialize final json string */
+        
+        
+        return jsonString;
     }
 
     public String convertJsonToCsvString(JsonObject json){
         
-        JsonArray section = (JsonArray)json.get("section");     /* Create JsonArray to hold section data */
-        JsonObject subject = (JsonObject)json.get("subject");       /* Create JsonObject to hold subject data */
-        JsonObject course = (JsonObject)json.get("course");     /* Create JsonObeject to hold course data */
-        JsonObject scheduletype = (JsonObject)json.get("scheduletype");     /* Create JsonObject to hold scheduletype data */
+        JsonArray section = (JsonArray)json.get(SECTION_COL_HEADER);     /* Create JsonArray to hold section data */
+        JsonObject subject = (JsonObject)json.get(SUBJECT_COL_HEADER);       /* Create JsonObject to hold subject data */
+        JsonObject course = (JsonObject)json.get(COURSE_ID);     /* Create JsonObeject to hold course data */
+        JsonObject scheduletype = (JsonObject)json.get(SCHEDULETYPE_ID);     /* Create JsonObject to hold scheduletype data */
         
-        ArrayList<ArrayList<String>> classesArray = new ArrayList();
+        ArrayList<ArrayList<String>> sectionArray = new ArrayList();
         ArrayList<String> header = new ArrayList();
         ArrayList<String> printLineHolder;
         
@@ -64,42 +137,36 @@ public class ClassSchedule {
         header.add(INSTRUCTOR_COL_HEADER);      /*"*/
         
         for(int i = 0; i < section.size(); i++){
-            ArrayList<String> classData = new ArrayList();      /* Create ArrayList to hold a single class section */
+            ArrayList<String> sectionData = new ArrayList();      /* Create ArrayList to hold a single class section */
             HashMap<String, String> sectionObject = (HashMap)section.get(i);        /* Create HashMap to hold a single section instance */
             HashMap<String, String> subjectObject = (HashMap)course.get((sectionObject.get(SUBJECTID_COL_HEADER)+" "+sectionObject.get(NUM_COL_HEADER)));        /* Create an HashMap to hold a sible subject instance */
             
-            Object crnHolder;        /* Create a holder for uncastable data type */
-            crnHolder = sectionObject.get(CRN_COL_HEADER);      /* Place the object into the holder */
-            String crnString = crnHolder.toString();        /* Cast the object to a usable data type */
+            Object crnHolder = sectionObject.get(CRN_COL_HEADER);      /* Place the object into the holder */
             
-            Object creditsHolder;        /* Create a holder for uncastable data type */
-            creditsHolder = subjectObject.get(CREDITS_COL_HEADER);      /* Place the object into the holder */
-            String creditsString = creditsHolder.toString();        /* Cast the object to a usable data type */
+            Object creditsHolder = subjectObject.get(CREDITS_COL_HEADER);      /* Place the object into the holder */
             
-            Object instructorHolder;     /* Create a holder for uncastable data type */
-            instructorHolder = sectionObject.get(INSTRUCTOR_COL_HEADER);        /* Place the object into the holder */
+            Object instructorHolder = sectionObject.get(INSTRUCTOR_COL_HEADER);        /* Place the object into the holder */
             String instructorString = instructorHolder.toString();      /* Cast the object to a usable data type */
-            instructorString = instructorString.replaceAll("[\\p{Ps}\\p{Pe}]", "");     /* Clean string for adding to ArrayList */
             
-            classData.add(crnString);       /* Add data to classData ArrayList */
-            classData.add((String)subject.get(sectionObject.get(SUBJECTID_COL_HEADER)));     /*"*/
-            classData.add((sectionObject.get(SUBJECTID_COL_HEADER)+" "+sectionObject.get(NUM_COL_HEADER)));      /*"*/
-            classData.add(subjectObject.get(DESCRIPTION_COL_HEADER));       /*"*/
-            classData.add(sectionObject.get(SECTION_COL_HEADER));       /*"*/
-            classData.add(sectionObject.get(TYPE_COL_HEADER));      /*"*/
-            classData.add(creditsString);       /*"*/
-            classData.add(sectionObject.get(START_COL_HEADER));     /*"*/
-            classData.add(sectionObject.get(END_COL_HEADER));       /*"*/
-            classData.add(sectionObject.get(DAYS_COL_HEADER));      /*"*/
-            classData.add(sectionObject.get(WHERE_COL_HEADER));     /*"*/
-            classData.add((String)scheduletype.get(sectionObject.get(TYPE_COL_HEADER)));        /*"*/
-            classData.add(instructorString);        /*"*/
+            sectionData.add(crnHolder.toString());       /* Add data to classData ArrayList */
+            sectionData.add((String)subject.get(sectionObject.get(SUBJECTID_COL_HEADER)));     /*"*/
+            sectionData.add((sectionObject.get(SUBJECTID_COL_HEADER)+" "+sectionObject.get(NUM_COL_HEADER)));      /*"*/
+            sectionData.add(subjectObject.get(DESCRIPTION_COL_HEADER));       /*"*/
+            sectionData.add(sectionObject.get(SECTION_COL_HEADER));       /*"*/
+            sectionData.add(sectionObject.get(TYPE_COL_HEADER));      /*"*/
+            sectionData.add(creditsHolder.toString());       /*"*/
+            sectionData.add(sectionObject.get(START_COL_HEADER));     /*"*/
+            sectionData.add(sectionObject.get(END_COL_HEADER));       /*"*/
+            sectionData.add(sectionObject.get(DAYS_COL_HEADER));      /*"*/
+            sectionData.add(sectionObject.get(WHERE_COL_HEADER));     /*"*/
+            sectionData.add((String)scheduletype.get(sectionObject.get(TYPE_COL_HEADER)));        /*"*/
+            sectionData.add(instructorString.replaceAll("[\\p{Ps}\\p{Pe}]", ""));        /*"*/
             
-            classesArray.add(classData);        /* Add the fully populated classData Arraylist to the overall classesArray container */
+            sectionArray.add(sectionData);        /* Add the fully populated classData Arraylist to the overall classesArray container */
         
         }
         
-        StringWriter sw = new StringWriter();       /* Create a writer for writing to the final string */
+        StringWriter sw = new StringWriter();
         
         ICSVWriter csvWriter = new CSVWriterBuilder(sw)     /* Create a ICVSWriter with the proper formatting specifications */
             .withSeparator('\t')        /* Specific line seperator */
@@ -110,20 +177,21 @@ public class ClassSchedule {
         
         csvWriter.writeNext(header.toArray(String[]::new));     /* Write header row to final string */
         
-        for(int i = 0; i < classesArray.size(); i++){
-            printLineHolder = (ArrayList<String>)classesArray.get(i);       /* Place single classData ArrayList into the printLineHolder */
+        for(int i = 0; i < sectionArray.size(); i++){
+            printLineHolder = (ArrayList<String>)sectionArray.get(i);       /* Place single classData ArrayList into the printLineHolder */
             
             csvWriter.writeNext(printLineHolder.toArray(String[]::new));       /* Write printLineHolder's contents to final string */
         }
         
-        try{
+       
+        try {
             csvWriter.close();      /* Close writer */
         }
-        catch(IOException e ){}
+        catch (IOException e){}
         
-        String jsonToCSV = sw.toString();       /* Create final string output */
         
-        return jsonToCSV;       /* return final output */
+        return sw.toString();       /* return final output */
+        
     }
     
     public JsonObject getJson() {

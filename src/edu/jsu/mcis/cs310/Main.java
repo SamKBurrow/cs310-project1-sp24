@@ -15,10 +15,8 @@ public class Main {
             
             List<String[]> csvOriginal = schedule.getCsv();
             JsonObject jsonOriginal = schedule.getJson();
-            schedule.convertJsonToCsvString(jsonOriginal);
             
             // Print Total Sections Found in CSV and JSON Data (should be equal)
-            
             System.out.println("Sections Found (CSV): " + (csvOriginal.size() - 1));
             
             JsonArray sections = (JsonArray)jsonOriginal.get("section");
