@@ -103,12 +103,10 @@ public class ClassSchedule {
         csvToJson.put(SUBJECT_COL_HEADER, subject);     /* Place data into final JsonObject */
         csvToJson.put(SECTION_COL_HEADER, section);     /*"*/
         csvToJson.put(COURSE_ID, course);       /*"*/
-        csvToJson.put(SCHEDULETYPE_ID, scheduletype);       /*"*/
-        
-        String jsonString = Jsoner.serialize(csvToJson);        /* Serialize final json string */
+        csvToJson.put(SCHEDULETYPE_ID, scheduletype);     /*"*/  
         
         
-        return jsonString;
+        return Jsoner.serialize(csvToJson); /* Serialize final json string */
     }
 
     public String convertJsonToCsvString(JsonObject json){
