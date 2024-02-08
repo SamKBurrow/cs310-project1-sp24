@@ -121,7 +121,7 @@ public class ClassSchedule {
         ArrayList<String> header = new ArrayList();
         ArrayList<String> printLineHolder;
         
-        Collections.addAll(header, CRN_COL_HEADER, SUBJECT_COL_HEADER, NUM_COL_HEADER, 
+        Collections.addAll(header, CRN_COL_HEADER, SUBJECT_COL_HEADER, NUM_COL_HEADER,      /* Add header row to array */
                     DESCRIPTION_COL_HEADER, SECTION_COL_HEADER, TYPE_COL_HEADER,
                     CREDITS_COL_HEADER, START_COL_HEADER, END_COL_HEADER,
                     DAYS_COL_HEADER, WHERE_COL_HEADER, SCHEDULE_COL_HEADER,
@@ -141,7 +141,7 @@ public class ClassSchedule {
         for(int i = 0; i < section.size(); i++){
             ArrayList<String> sectionData = new ArrayList();      /* Create ArrayList to hold a single class section */
             HashMap<String, String> sectionObject = (HashMap)section.get(i);        /* Create HashMap to hold a single section instance */
-            HashMap<String, String> subjectObject = (HashMap)course.get((sectionObject.get(SUBJECTID_COL_HEADER)+" "+sectionObject.get(NUM_COL_HEADER)));        /* Create an HashMap to hold a sible subject instance */
+            HashMap<String, String> subjectObject = (HashMap)course.get((sectionObject.get(SUBJECTID_COL_HEADER)+" "+sectionObject.get(NUM_COL_HEADER)));        /* Create an HashMap to hold a single subject instance */
             
             Object crnHolder = sectionObject.get(CRN_COL_HEADER);      /* Place the object into the holder */
             
