@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -87,13 +88,13 @@ public class ClassSchedule {
                 course.put(sectionObject[headerRow.get(NUM_COL_HEADER)], courseData);       /* Place courseData into course object */
                 
                 
-                if(!subject.containsValue(sectionObject[headerRow.get(SUBJECT_COL_HEADER)])){       /* Check to see if value is already present in subject object */
+                if(!subject.containsKey(courseNumAndCode[0])){       /* Check to see if value is already present in subject object */
                     subject.put(courseNumAndCode[0], sectionObject[headerRow.get(SUBJECT_COL_HEADER)]);     /* Place value into subject object */
                 }
                 else{}
                 
                 
-                if(!scheduletype.containsValue(sectionObject[headerRow.get(SCHEDULE_COL_HEADER)])){     /* Check to see if value is already present in scheduletype object */
+                if(!scheduletype.containsKey(sectionObject[headerRow.get(TYPE_COL_HEADER)])){     /* Check to see if value is already present in scheduletype object */
                     scheduletype.put(sectionObject[headerRow.get(TYPE_COL_HEADER)], sectionObject[headerRow.get(SCHEDULE_COL_HEADER)]);     /* Place value into scheduletype object */
                 }
                 else{}
@@ -107,6 +108,7 @@ public class ClassSchedule {
         
         
         return Jsoner.serialize(csvToJson); /* Serialize final json string */
+    
     }
 
     public String convertJsonToCsvString(JsonObject json){
@@ -116,23 +118,25 @@ public class ClassSchedule {
         JsonObject course = (JsonObject)json.get(COURSE_ID);     /* Create JsonObeject to hold course data */
         JsonObject scheduletype = (JsonObject)json.get(SCHEDULETYPE_ID);     /* Create JsonObject to hold scheduletype data */
         
-        ArrayList<ArrayList<String>> sectionArray = new ArrayList();
         ArrayList<String> header = new ArrayList();
         ArrayList<String> printLineHolder;
         
-        header.add(CRN_COL_HEADER);     /* Create header row */
-        header.add(SUBJECT_COL_HEADER);     /*"*/
-        header.add(NUM_COL_HEADER);     /*"*/
-        header.add(DESCRIPTION_COL_HEADER);     /*"*/
-        header.add(SECTION_COL_HEADER);     /*"*/
-        header.add(TYPE_COL_HEADER);        /*"*/
-        header.add(CREDITS_COL_HEADER);     /*"*/
-        header.add(START_COL_HEADER);       /*"*/
-        header.add(END_COL_HEADER);     /*"*/
-        header.add(DAYS_COL_HEADER);        /*"*/
-        header.add(WHERE_COL_HEADER);       /*"*/
-        header.add(SCHEDULE_COL_HEADER);        /*"*/
-        header.add(INSTRUCTOR_COL_HEADER);      /*"*/
+        Collections.addAll(header, CRN_COL_HEADER, SUBJECT_COL_HEADER, NUM_COL_HEADER, 
+                    DESCRIPTION_COL_HEADER, SECTION_COL_HEADER, TYPE_COL_HEADER,
+                    CREDITS_COL_HEADER, START_COL_HEADER, END_COL_HEADER,
+                    DAYS_COL_HEADER, WHERE_COL_HEADER, SCHEDULE_COL_HEADER,
+                    INSTRUCTOR_COL_HEADER);
+        
+        StringWriter sw = new StringWriter();
+        
+        ICSVWriter csvWriter = new CSVWriterBuilder(sw)     /* Create a ICVSWriter with the proper formatting specifications */
+            .withSeparator('\t')        /* Specific line seperator */
+            .withQuoteChar('"')     /* Wrap string values in double quotes */
+            .withEscapeChar(CSVWriter.DEFAULT_ESCAPE_CHARACTER)     /* Default escape sequence */
+            .withLineEnd(CSVWriter.DEFAULT_LINE_END)        /* Default line end character */
+            .build();       /* Build ICSVWriter */
+        
+        csvWriter.writeNext(header.toArray(String[]::new));     /* Write header row to final string */
         
         for(int i = 0; i < section.size(); i++){
             ArrayList<String> sectionData = new ArrayList();      /* Create ArrayList to hold a single class section */
@@ -160,33 +164,15 @@ public class ClassSchedule {
             sectionData.add((String)scheduletype.get(sectionObject.get(TYPE_COL_HEADER)));        /*"*/
             sectionData.add(instructorString.replaceAll("[\\p{Ps}\\p{Pe}]", ""));        /*"*/
             
-            sectionArray.add(sectionData);        /* Add the fully populated classData Arraylist to the overall classesArray container */
+            printLineHolder = sectionData;
+            csvWriter.writeNext(printLineHolder.toArray(String[]::new));       
         
         }
         
-        StringWriter sw = new StringWriter();
-        
-        ICSVWriter csvWriter = new CSVWriterBuilder(sw)     /* Create a ICVSWriter with the proper formatting specifications */
-            .withSeparator('\t')        /* Specific line seperator */
-            .withQuoteChar('"')     /* Wrap string values in double quotes */
-            .withEscapeChar(CSVWriter.DEFAULT_ESCAPE_CHARACTER)     /* Default escape sequence */
-            .withLineEnd(CSVWriter.DEFAULT_LINE_END)        /* Default line end character */
-            .build();       /* Build ICSVWriter */
-        
-        csvWriter.writeNext(header.toArray(String[]::new));     /* Write header row to final string */
-        
-        for(int i = 0; i < sectionArray.size(); i++){
-            printLineHolder = (ArrayList<String>)sectionArray.get(i);       /* Place single classData ArrayList into the printLineHolder */
-            
-            csvWriter.writeNext(printLineHolder.toArray(String[]::new));       /* Write printLineHolder's contents to final string */
-        }
-        
-       
         try {
             csvWriter.close();      /* Close writer */
         }
         catch (IOException e){}
-        
         
         return sw.toString();       /* return final output */
         
